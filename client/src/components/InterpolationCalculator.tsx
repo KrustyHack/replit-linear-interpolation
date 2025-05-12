@@ -118,6 +118,9 @@ export default function InterpolationCalculator() {
             point2={data.point2}
             xToInterpolate={data.xToInterpolate}
             interpolatedY={data.interpolatedY}
+            onUpdatePoint1={updatePoint1}
+            onUpdatePoint2={updatePoint2}
+            onUpdateXToInterpolate={updateXToInterpolate}
           />
           
           <FormulaCard />

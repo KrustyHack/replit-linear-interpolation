@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface Point {
@@ -11,12 +11,33 @@ interface GraphProps {
   point2: Point;
   xToInterpolate: number;
   interpolatedY: number | null;
+  onUpdatePoint1?: (x: number, y: number) => void;
+  onUpdatePoint2?: (x: number, y: number) => void;
+  onUpdateXToInterpolate?: (x: number) => void;
 }
 
-export default function Graph({ point1, point2, xToInterpolate, interpolatedY }: GraphProps) {
+export default function Graph({ 
+  point1, 
+  point2, 
+  xToInterpolate, 
+  interpolatedY,
+  onUpdatePoint1,
+  onUpdatePoint2,
+  onUpdateXToInterpolate
+}: GraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // State for drag operations
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragTarget, setDragTarget] = useState<'point1' | 'point2' | 'interpolate' | null>(null);
   
+  // Variables to track coordinate mapping
+  const mapXRef = useRef<(x: number) => number>(() => 0);
+  const mapYRef = useRef<(y: number) => number>(() => 0);
+  const inverseMapXRef = useRef<(x: number) => number>(() => 0);
+  const inverseMapYRef = useRef<(y: number) => number>(() => 0);
+
   // Function to draw the graph
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -58,6 +79,19 @@ export default function Graph({ point1, point2, xToInterpolate, interpolatedY }:
     const mapY = (yVal: number) => 
       canvas.height - (padding + (yVal - yMin) * (canvas.height - 2 * padding) / (yMax - yMin));
     
+    // Inverse mapping functions (canvas coordinates to graph coordinates)
+    const inverseMapX = (canvasX: number) =>
+      xMin + (canvasX - padding) * (xMax - xMin) / (canvas.width - 2 * padding);
+    
+    const inverseMapY = (canvasY: number) =>
+      yMin + (canvas.height - canvasY - padding) * (yMax - yMin) / (canvas.height - 2 * padding);
+    
+    // Store mapping functions in refs for event handlers
+    mapXRef.current = mapX;
+    mapYRef.current = mapY;
+    inverseMapXRef.current = inverseMapX;
+    inverseMapYRef.current = inverseMapY;
+    
     // Draw grid
     drawGrid(ctx, xMin, xMax, yMin, yMax, padding, mapX, mapY);
     
@@ -98,6 +132,90 @@ export default function Graph({ point1, point2, xToInterpolate, interpolatedY }:
     }
   }, [point1, point2, xToInterpolate, interpolatedY]);
   
+  // Function to check if the mouse is near a point
+  const isNearPoint = (mouseX: number, mouseY: number, pointX: number, pointY: number): boolean => {
+    const mapX = mapXRef.current;
+    const mapY = mapYRef.current;
+    const canvasPointX = mapX(pointX);
+    const canvasPointY = mapY(pointY);
+    
+    // Calculate distance between mouse and point
+    const distance = Math.sqrt(
+      Math.pow(mouseX - canvasPointX, 2) + 
+      Math.pow(mouseY - canvasPointY, 2)
+    );
+    
+    // Consider the point "hit" if the mouse is within 10 pixels
+    return distance <= 10;
+  };
+  
+  // Mouse event handlers
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      if (!onUpdatePoint1 && !onUpdatePoint2 && !onUpdateXToInterpolate) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Check if the user clicked on a draggable point
+      if (isNearPoint(mouseX, mouseY, point1.x, point1.y) && onUpdatePoint1) {
+        setIsDragging(true);
+        setDragTarget('point1');
+      } else if (isNearPoint(mouseX, mouseY, point2.x, point2.y) && onUpdatePoint2) {
+        setIsDragging(true);
+        setDragTarget('point2');
+      } else if (interpolatedY !== null && isNearPoint(mouseX, mouseY, xToInterpolate, interpolatedY) && onUpdateXToInterpolate) {
+        setIsDragging(true);
+        setDragTarget('interpolate');
+      }
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !dragTarget) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const inverseMapX = inverseMapXRef.current;
+      const inverseMapY = inverseMapYRef.current;
+      
+      // Convert canvas coordinates to graph coordinates
+      const graphX = inverseMapX(mouseX);
+      const graphY = inverseMapY(mouseY);
+      
+      // Update the appropriate point based on the drag target
+      if (dragTarget === 'point1' && onUpdatePoint1) {
+        onUpdatePoint1(graphX, graphY);
+      } else if (dragTarget === 'point2' && onUpdatePoint2) {
+        onUpdatePoint2(graphX, graphY);
+      } else if (dragTarget === 'interpolate' && onUpdateXToInterpolate) {
+        onUpdateXToInterpolate(graphX);
+      }
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setDragTarget(null);
+    };
+    
+    // Add event listeners
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    // Remove event listeners when component unmounts
+    return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [point1, point2, xToInterpolate, interpolatedY, isDragging, dragTarget, onUpdatePoint1, onUpdatePoint2, onUpdateXToInterpolate]);
+  
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -128,8 +246,24 @@ export default function Graph({ point1, point2, xToInterpolate, interpolatedY }:
         <div 
           ref={containerRef} 
           className="relative h-64 md:h-80 border border-gray-300 bg-white rounded-md"
+          style={{ 
+            cursor: isDragging ? 'grabbing' : (
+              dragTarget ? 'grabbing' : 'default'
+            ) 
+          }}
         >
-          <canvas ref={canvasRef} className="w-full h-full"></canvas>
+          <canvas 
+            ref={canvasRef} 
+            className="w-full h-full"
+            style={{ 
+              cursor: (onUpdatePoint1 || onUpdatePoint2 || onUpdateXToInterpolate) ? 'pointer' : 'default' 
+            }}
+          ></canvas>
+          {(onUpdatePoint1 || onUpdatePoint2 || onUpdateXToInterpolate) && (
+            <div className="absolute bottom-2 right-2 bg-white/80 text-xs text-gray-600 py-1 px-2 rounded">
+              <span>Tip: Click and drag points to move them</span>
+            </div>
+          )}
         </div>
         <div className="flex justify-between mt-3 text-sm text-gray-600">
           <div className="flex items-center">
