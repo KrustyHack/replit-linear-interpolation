@@ -116,13 +116,13 @@ export default function Graph({
       drawLine(ctx, x1, y1, x2, y2, mapX, mapY, '#2196F3', 2);
     }
     
-    // Draw points
-    drawPoint(ctx, x1, y1, mapX, mapY, '#2196F3');
-    drawPoint(ctx, x2, y2, mapX, mapY, '#2196F3');
+    // Draw points with interactive indicator when handlers are available
+    drawPoint(ctx, x1, y1, mapX, mapY, '#2196F3', !!onUpdatePoint1);
+    drawPoint(ctx, x2, y2, mapX, mapY, '#2196F3', !!onUpdatePoint2);
     
     // Draw interpolated point and dashed lines
     if (interpolatedY !== null) {
-      drawPoint(ctx, x, y, mapX, mapY, '#FF4081');
+      drawPoint(ctx, x, y, mapX, mapY, '#FF4081', !!onUpdateXToInterpolate);
       
       // Draw dashed lines to axes
       drawDashedLine(
@@ -158,8 +158,8 @@ export default function Graph({
       Math.pow(mouseY - canvasPointY, 2)
     );
     
-    // Consider the point "hit" if the mouse is within 10 pixels
-    return distance <= 10;
+    // Consider the point "hit" if the mouse is within 15 pixels (augmenté pour faciliter la sélection)
+    return distance <= 15;
   };
   
   // Mouse event handlers
@@ -200,8 +200,22 @@ export default function Graph({
       }
     };
     
+    // Optimiser le drag and drop pour plus de fluidité
+    let lastUpdateTime = 0;
+    const updateInterval = 30; // Limiter les mises à jour à ~30ms (environ 30fps)
+    
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !dragTarget) return;
+      
+      const now = Date.now();
+      
+      // Contrôler la fréquence des mises à jour pour améliorer les performances
+      if (now - lastUpdateTime < updateInterval) {
+        // Mise à jour trop fréquente, sauter cette frame
+        return;
+      }
+      
+      lastUpdateTime = now;
       
       const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -217,15 +231,30 @@ export default function Graph({
       // Snap to integer or .25/.50 increments
       graphX = snapToGridValue(graphX);
       graphY = snapToGridValue(graphY);
-      
-      // Update the appropriate point based on the drag target
-      if (dragTarget === 'point1' && onUpdatePoint1) {
-        onUpdatePoint1(graphX, graphY);
-      } else if (dragTarget === 'point2' && onUpdatePoint2) {
-        onUpdatePoint2(graphX, graphY);
-      } else if (dragTarget === 'interpolate' && onUpdateXToInterpolate) {
-        onUpdateXToInterpolate(graphX);
-      }
+
+      // Utiliser requestAnimationFrame pour synchroniser avec le redessinage du navigateur
+      requestAnimationFrame(() => {
+        // Update UI and apply animation via CSS transitions
+        const canvasElement = canvas;
+        if (canvasElement) {
+          // Ajouter une classe temporaire pour activer l'animation CSS
+          canvasElement.style.transition = 'transform 0.1s ease-out';
+          
+          // Tout réinitialiser après la fin de la transition
+          setTimeout(() => {
+            canvasElement.style.transition = '';
+          }, 100);
+        }
+        
+        // Update the appropriate point based on the drag target
+        if (dragTarget === 'point1' && onUpdatePoint1) {
+          onUpdatePoint1(graphX, graphY);
+        } else if (dragTarget === 'point2' && onUpdatePoint2) {
+          onUpdatePoint2(graphX, graphY);
+        } else if (dragTarget === 'interpolate' && onUpdateXToInterpolate) {
+          onUpdateXToInterpolate(graphX);
+        }
+      });
     };
     
     const handleMouseUp = () => {
@@ -286,7 +315,8 @@ export default function Graph({
             ref={canvasRef} 
             className="w-full h-full"
             style={{ 
-              cursor: (onUpdatePoint1 || onUpdatePoint2 || onUpdateXToInterpolate) ? 'pointer' : 'default' 
+              cursor: isDragging ? 'grabbing' : 
+                     ((onUpdatePoint1 || onUpdatePoint2 || onUpdateXToInterpolate) ? 'grab' : 'default')
             }}
           ></canvas>
           {(onUpdatePoint1 || onUpdatePoint2 || onUpdateXToInterpolate) && (
@@ -430,9 +460,20 @@ function drawPoint(
   y: number, 
   mapX: (x: number) => number,
   mapY: (y: number) => number,
-  color: string
+  color: string,
+  isInteractive = false
 ) {
-  const radius = 6;
+  const radius = isInteractive ? 7 : 6;
+  
+  // Draw shadow for better visual feedback
+  if (isInteractive) {
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+  }
+  
+  // Draw main circle
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(
@@ -443,6 +484,12 @@ function drawPoint(
     2 * Math.PI
   );
   ctx.fill();
+  
+  // Reset shadow
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
   
   // White center
   ctx.fillStyle = '#FFFFFF';
@@ -455,4 +502,19 @@ function drawPoint(
     2 * Math.PI
   );
   ctx.fill();
+  
+  // Draw a ring around interactive points
+  if (isInteractive) {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(
+      mapX(x), 
+      mapY(y), 
+      radius + 3, 
+      0, 
+      2 * Math.PI
+    );
+    ctx.stroke();
+  }
 }
