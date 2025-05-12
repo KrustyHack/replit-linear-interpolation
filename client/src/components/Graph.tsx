@@ -16,19 +16,6 @@ interface GraphProps {
   onUpdateXToInterpolate?: (x: number) => void;
 }
 
-// Function to snap values to integer or .25/.50 increments
-const snapToIncrement = (value: number): number => {
-  // Calculate how far we are from the nearest 0.25 increment
-  const remainder = value % 0.25;
-  
-  // Snap to the nearest 0.25 increment
-  if (remainder < 0.125) {
-    return Math.floor(value / 0.25) * 0.25;
-  } else {
-    return Math.ceil(value / 0.25) * 0.25;
-  }
-};
-
 export default function Graph({ 
   point1, 
   point2, 
@@ -50,6 +37,19 @@ export default function Graph({
   const mapYRef = useRef<(y: number) => number>(() => 0);
   const inverseMapXRef = useRef<(x: number) => number>(() => 0);
   const inverseMapYRef = useRef<(y: number) => number>(() => 0);
+  
+  // Function to snap values to integer or .25/.50 increments
+  const snapToIncrement = (value: number): number => {
+    // Calculate how far we are from the nearest 0.25 increment
+    const remainder = value % 0.25;
+    
+    // Snap to the nearest 0.25 increment
+    if (remainder < 0.125) {
+      return Math.floor(value / 0.25) * 0.25;
+    } else {
+      return Math.ceil(value / 0.25) * 0.25;
+    }
+  };
 
   // Function to draw the graph
   useEffect(() => {
@@ -167,6 +167,19 @@ export default function Graph({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
+    // Nested helper function for snapping values
+    const snapToGridValue = (value: number): number => {
+      // Calculate how far we are from the nearest 0.25 increment
+      const remainder = value % 0.25;
+      
+      // Snap to the nearest 0.25 increment
+      if (remainder < 0.125) {
+        return Math.floor(value / 0.25) * 0.25;
+      } else {
+        return Math.ceil(value / 0.25) * 0.25;
+      }
+    };
+    
     const handleMouseDown = (e: MouseEvent) => {
       if (!onUpdatePoint1 && !onUpdatePoint2 && !onUpdateXToInterpolate) return;
       
@@ -202,8 +215,8 @@ export default function Graph({
       let graphY = inverseMapY(mouseY);
       
       // Snap to integer or .25/.50 increments
-      graphX = snapToIncrement(graphX);
-      graphY = snapToIncrement(graphY);
+      graphX = snapToGridValue(graphX);
+      graphY = snapToGridValue(graphY);
       
       // Update the appropriate point based on the drag target
       if (dragTarget === 'point1' && onUpdatePoint1) {
