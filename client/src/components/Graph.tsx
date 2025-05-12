@@ -16,6 +16,19 @@ interface GraphProps {
   onUpdateXToInterpolate?: (x: number) => void;
 }
 
+// Function to snap values to integer or .25/.50 increments
+const snapToIncrement = (value: number): number => {
+  // Calculate how far we are from the nearest 0.25 increment
+  const remainder = value % 0.25;
+  
+  // Snap to the nearest 0.25 increment
+  if (remainder < 0.125) {
+    return Math.floor(value / 0.25) * 0.25;
+  } else {
+    return Math.ceil(value / 0.25) * 0.25;
+  }
+};
+
 export default function Graph({ 
   point1, 
   point2, 
@@ -131,7 +144,7 @@ export default function Graph({
       );
     }
   }, [point1, point2, xToInterpolate, interpolatedY]);
-  
+
   // Function to check if the mouse is near a point
   const isNearPoint = (mouseX: number, mouseY: number, pointX: number, pointY: number): boolean => {
     const mapX = mapXRef.current;
@@ -185,8 +198,12 @@ export default function Graph({
       const inverseMapY = inverseMapYRef.current;
       
       // Convert canvas coordinates to graph coordinates
-      const graphX = inverseMapX(mouseX);
-      const graphY = inverseMapY(mouseY);
+      let graphX = inverseMapX(mouseX);
+      let graphY = inverseMapY(mouseY);
+      
+      // Snap to integer or .25/.50 increments
+      graphX = snapToIncrement(graphX);
+      graphY = snapToIncrement(graphY);
       
       // Update the appropriate point based on the drag target
       if (dragTarget === 'point1' && onUpdatePoint1) {
