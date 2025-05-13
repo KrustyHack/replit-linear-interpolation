@@ -99,6 +99,63 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mb-16">
+        <h2 className="text-2xl font-semibold mb-6 text-center">Frequently Asked Questions</h2>
+        <div className="space-y-6">
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">What is interpolation?</h3>
+            <p>Interpolation is a method of finding new data points within the range of a known set of points. It's essential in scientific research, engineering, and data analysis for estimating values between measured data points.</p>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">Which interpolation method should I choose?</h3>
+            <p>The best method depends on your specific needs:</p>
+            <ul className="list-disc list-inside mt-2">
+              <li>Linear interpolation is ideal for simple data or when you need a straightforward approach</li>
+              <li>Polynomial interpolation works well for smooth curves with few data points</li>
+              <li>Cubic spline interpolation is best for creating smooth curves that pass through all points while avoiding oscillations</li>
+            </ul>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">What's the difference between interpolation and extrapolation?</h3>
+            <p>Interpolation estimates values between known data points, while extrapolation predicts values outside the range of known data. Extrapolation is generally less reliable since it involves more uncertainty.</p>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">How accurate are the calculations?</h3>
+            <p>Our calculator performs calculations with full floating-point precision and displays results rounded to 4 decimal places. The accuracy ultimately depends on your chosen interpolation method and the quality of your input data.</p>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">Can I save or share my calculations?</h3>
+            <p>Yes! The calculator automatically saves your recent calculations in your browser's local storage. You can also export results to CSV format for further analysis or sharing with colleagues.</p>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">Why might I get unexpected results?</h3>
+            <p>Unusual results may occur due to:</p>
+            <ul className="list-disc list-inside mt-2">
+              <li>Duplicate x-coordinates</li>
+              <li>Points not arranged in order of x-coordinates</li>
+              <li>Using too few points for your chosen method</li>
+              <li>Data not suitable for the selected interpolation approach</li>
+            </ul>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">How is interpolation used in engineering?</h3>
+            <p>Engineers use interpolation for various applications, including:</p>
+            <ul className="list-disc list-inside mt-2">
+              <li>Structural analysis to determine stress at specific points</li>
+              <li>Signal processing to reconstruct continuous signals</li>
+              <li>Control systems to generate smooth control curves</li>
+              <li>Computational fluid dynamics to calculate values between grid points</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <footer className="text-center text-gray-600 mt-12">
         <p>© {new Date().getFullYear()} Linear Interpolation Calculator. All rights reserved.</p>
       </footer>
