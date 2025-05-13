@@ -17,7 +17,7 @@ tasks:
     cmds:
       - docker run -d -p {{.PORT}}:{{.PORT}} --name {{.CONTAINER_NAME}} {{.IMAGE_NAME}}
     silent: false
-    deps: [build]
+    deps: [build, rm]
 
   stop:
     desc: Stop the Docker container

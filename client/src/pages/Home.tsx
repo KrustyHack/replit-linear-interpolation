@@ -3,11 +3,6 @@ import InterpolationCalculator from "@/components/InterpolationCalculator";
 export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <header className="mb-12 text-center">
-        <h1 className="text-4xl font-bold mb-4 text-primary">Linear Interpolation Calculator</h1>
-        <p className="text-xl text-gray-600">A precise tool for estimating values between known data points</p>
-      </header>
-
       <section className="mb-16">
         <div className="grid md:grid-cols-2 gap-8">
           <div>
