@@ -8,7 +8,6 @@ This project is a fullstack web application with:
 - React frontend with Tailwind CSS
 - Express backend
 - TypeScript for type safety
-- Drizzle ORM for database operations
 
 ## Development Setup
 
@@ -33,14 +32,6 @@ npm install
 3. Start the development server:
 ```
 npm run dev
-```
-
-## Database Setup
-
-This project uses Drizzle ORM. To set up the database:
-
-```
-npm run db:push
 ```
 
 ## Building for Production
@@ -81,7 +72,6 @@ The application will be available at http://localhost:5000.
 - `npm run build`: Build for production
 - `npm start`: Run production server
 - `npm run check`: Type check the codebase
-- `npm run db:push`: Update database schema
 
 ## License
 
