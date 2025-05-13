@@ -1,0 +1,49 @@
+version: '3'
+
+vars:
+  IMAGE_NAME: linear-interpolation
+  CONTAINER_NAME: linear-interpolation-app
+  PORT: 5000
+
+tasks:
+  build:
+    desc: Build the Docker image
+    cmds:
+      - docker build -t {{.IMAGE_NAME}} .
+    silent: false
+
+  run:
+    desc: Run the Docker container
+    cmds:
+      - docker run -d -p {{.PORT}}:{{.PORT}} --name {{.CONTAINER_NAME}} {{.IMAGE_NAME}}
+    silent: false
+    deps: [build]
+
+  stop:
+    desc: Stop the Docker container
+    cmds:
+      - docker stop {{.CONTAINER_NAME}}
+    silent: false
+    ignore_error: true
+
+  rm:
+    desc: Remove the Docker container
+    cmds:
+      - docker rm {{.CONTAINER_NAME}}
+    silent: false
+    deps: [stop]
+    ignore_error: true
+
+  clean:
+    desc: Clean up Docker resources
+    cmds:
+      - task: rm
+      - docker rmi {{.IMAGE_NAME}}
+    silent: false
+    ignore_error: true
+
+  default:
+    desc: Display available tasks
+    cmds:
+      - task --list
+    silent: true 
